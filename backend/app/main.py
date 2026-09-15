@@ -70,15 +70,17 @@ def create_app():
     @app.get("/api/tts")
     async def tts(text: str, voice: str = "xiaoxiao", speed: float = 1.0):
         """文字转语音，返回 mp3。"""
+        import tempfile, os
         try:
             v = VOICES.get(voice, VOICES["xiaoxiao"])
             rate = f"+{int((speed - 1.0) * 100)}%" if speed >= 1.0 else f"{int((speed - 1.0) * 100)}%"
             communicate = edge_tts.Communicate(text, v, rate=rate)
-            from io import BytesIO
-            buf = BytesIO()
-            await communicate.save(buf)
-            buf.seek(0)
-            data = buf.read()
+            fd, tmp_path = tempfile.mkstemp(suffix=".mp3")
+            os.close(fd)
+            await communicate.save(tmp_path)
+            with open(tmp_path, "rb") as f:
+                data = f.read()
+            os.unlink(tmp_path)
             if not data:
                 return JSONResponse({"error": "edge-tts returned empty audio"}, status_code=502)
             from fastapi.responses import Response
