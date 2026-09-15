@@ -788,14 +788,34 @@ var TTS_SPEED = parseFloat(localStorage.getItem("tts_speed")) || 1.0;
 
 function speakVoice(text) {
   if (!text) return;
+  // 先试 Edge TTS API
   var url = "/api/tts?text=" + encodeURIComponent(text)
           + "&voice=" + TTS_VOICE + "&speed=" + TTS_SPEED;
   var audio = new Audio(url);
   audio.onplay = function () { _voiceSpeaking = true; };
   audio.onended = function () { _voiceSpeaking = false; showVoiceHint("Hold and speak", "按住说话"); };
-  audio.onerror = function () { _voiceSpeaking = false; showVoiceHint("Hold and speak", "按住说话"); };
+  // Edge TTS 失败时回退到浏览器内置
+  audio.onerror = function () {
+    if (!window.speechSynthesis) { _voiceSpeaking = false; return; }
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    var utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "zh-CN"; utter.rate = 0.95;
+    utter.onstart = function () { _voiceSpeaking = true; };
+    utter.onend = function () { _voiceSpeaking = false; showVoiceHint("Hold and speak", "按住说话"); };
+    utter.onerror = function () { _voiceSpeaking = false; };
+    window.speechSynthesis.speak(utter);
+  };
   _voiceAudio = audio;
-  audio.play().catch(function () { _voiceSpeaking = false; });
+  audio.play().catch(function () {
+    // play() 也失败则回退
+    if (!window.speechSynthesis) return;
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    var utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "zh-CN"; utter.rate = 0.95;
+    utter.onstart = function () { _voiceSpeaking = true; };
+    utter.onend = function () { _voiceSpeaking = false; showVoiceHint("Hold and speak", "按住说话"); };
+    window.speechSynthesis.speak(utter);
+  });
 }
 
 // 暴露给调试/设置页
