@@ -5,9 +5,10 @@ import asyncio
 import contextlib
 import os
 
+import edge_tts
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import BASE_DIR, settings
@@ -50,6 +51,35 @@ def create_app():
     app.include_router(characters.router)
     app.include_router(chat.router)
     app.include_router(memory.router)
+
+    # 预置声音列表（Edge TTS 免费）
+    VOICES = {
+        "xiaoxiao": "zh-CN-XiaoxiaoNeural",   # 温柔女声（默认）
+        "xiaoyi":   "zh-CN-XiaoyiNeural",     # 甜美女声
+        "xiaochen": "zh-CN-XiaochenNeural",   # 知性女声
+        "xiaomo":   "zh-CN-XiaomoNeural",     # 文艺女声
+        "xiaoshuang":"zh-CN-XiaoshuangNeural",# 活泼女声
+        "yunxi":    "zh-CN-YunxiNeural",      # 清朗男声
+        "yunyang":  "zh-CN-YunyangNeural",    # 阳光男声
+    }
+
+    @app.get("/api/tts/voices")
+    def list_voices():
+        return JSONResponse({"voices": list(VOICES.keys())})
+
+    @app.get("/api/tts")
+    async def tts(text: str, voice: str = "xiaoxiao", speed: float = 1.0):
+        """文字转语音，返回 mp3 流。"""
+        v = VOICES.get(voice, VOICES["xiaoxiao"])
+        rate = f"+{int((speed - 1.0) * 100)}%" if speed >= 1.0 else f"{int((speed - 1.0) * 100)}%"
+        communicate = edge_tts.Communicate(text, v, rate=rate)
+
+        async def gen():
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    yield chunk["data"]
+
+        return StreamingResponse(gen(), media_type="audio/mpeg")
 
     state = {"task": None}
 

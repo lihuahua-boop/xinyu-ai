@@ -732,7 +732,7 @@ function startVoiceDemo() {
 
 function stopVoiceDemo() {
   if (_voiceRec) { try { _voiceRec.abort(); } catch (e) {} _voiceRec = null; }
-  if (_voiceSpeaking) { try { window.speechSynthesis.cancel(); } catch (e) {} _voiceSpeaking = false; }
+  if (_voiceSpeaking) { try { if (_voiceAudio) { _voiceAudio.pause(); _voiceAudio.currentTime = 0; } } catch (e) {} _voiceSpeaking = false; }
 }
 
 function showVoiceHint(en, zh) {
@@ -743,7 +743,7 @@ function showVoiceHint(en, zh) {
 
 function startRecognition() {
   if (!_voiceSupported) { toast("浏览器不支持语音识别"); return; }
-  if (_voiceSpeaking) { window.speechSynthesis.cancel(); _voiceSpeaking = false; }
+  if (_voiceSpeaking) { if (_voiceAudio) { _voiceAudio.pause(); _voiceAudio.currentTime = 0; } _voiceSpeaking = false; }
   var Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
   _voiceRec = new Ctor();
   _voiceRec.lang = "zh-CN";
@@ -782,15 +782,25 @@ function sendVoiceText(text) {
   }).catch(function (err) { showVoiceHint("Try again", err.message); });
 }
 
+// TTS 声音选择，持久化到 localStorage
+var TTS_VOICE = localStorage.getItem("tts_voice") || "xiaoxiao";
+var TTS_SPEED = parseFloat(localStorage.getItem("tts_speed")) || 1.0;
+
 function speakVoice(text) {
-  if (!window.speechSynthesis) return;
-  var utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "zh-CN"; utter.rate = 0.95;
-  utter.onstart = function () { _voiceSpeaking = true; };
-  utter.onend = function () { _voiceSpeaking = false; showVoiceHint("Hold and speak", "按住说话"); };
-  utter.onerror = function () { _voiceSpeaking = false; showVoiceHint("Hold and speak", "按住说话"); };
-  window.speechSynthesis.speak(utter);
+  if (!text) return;
+  var url = "/api/tts?text=" + encodeURIComponent(text)
+          + "&voice=" + TTS_VOICE + "&speed=" + TTS_SPEED;
+  var audio = new Audio(url);
+  audio.onplay = function () { _voiceSpeaking = true; };
+  audio.onended = function () { _voiceSpeaking = false; showVoiceHint("Hold and speak", "按住说话"); };
+  audio.onerror = function () { _voiceSpeaking = false; showVoiceHint("Hold and speak", "按住说话"); };
+  _voiceAudio = audio;
+  audio.play().catch(function () { _voiceSpeaking = false; });
 }
+
+// 暴露给调试/设置页
+window.setTtsVoice = function (v) { TTS_VOICE = v; localStorage.setItem("tts_voice", v); };
+window.setTtsSpeed = function (s) { TTS_SPEED = parseFloat(s); localStorage.setItem("tts_speed", s); };
 
 function bind() {
   $("ob-next").addEventListener("click", wizardNext);
