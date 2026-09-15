@@ -69,17 +69,17 @@ def create_app():
 
     @app.get("/api/tts")
     async def tts(text: str, voice: str = "xiaoxiao", speed: float = 1.0):
-        """文字转语音，返回 mp3 流。"""
+        """文字转语音，返回 mp3。"""
         v = VOICES.get(voice, VOICES["xiaoxiao"])
         rate = f"+{int((speed - 1.0) * 100)}%" if speed >= 1.0 else f"{int((speed - 1.0) * 100)}%"
         communicate = edge_tts.Communicate(text, v, rate=rate)
-
-        async def gen():
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    yield chunk["data"]
-
-        return StreamingResponse(gen(), media_type="audio/mpeg")
+        # edge-tts 支持直接保存到 BytesIO
+        from io import BytesIO
+        buf = BytesIO()
+        await communicate.save(buf)
+        buf.seek(0)
+        from fastapi.responses import Response
+        return Response(buf.read(), media_type="audio/mpeg")
 
     state = {"task": None}
 
