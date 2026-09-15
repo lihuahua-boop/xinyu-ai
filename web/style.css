@@ -563,6 +563,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 5;
   backdrop-filter: blur(8px);
 }
 .voice-back:active { background: rgba(0, 0, 0, 0.1); }
@@ -581,6 +582,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 5;
   backdrop-filter: blur(8px);
   transition: background 0.15s;
 }
