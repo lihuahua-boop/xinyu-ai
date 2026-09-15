@@ -1,0 +1,10 @@
+.env
+data/
+__pycache__/
+.pytest_cache/
+*.pyc
+node_modules/
+android/
+ios/
+.DS_Store
+*.sqlite3

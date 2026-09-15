@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a1626">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg">
+<link rel="apple-touch-icon" href="/icons/icon-192.svg">
+<title>心屿 AI · 创造一个属于你的他</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="boot" class="boot">
+    <div class="boot-glow"></div>
+    <p class="boot-title">心屿</p>
+    <p class="boot-sub">他不是被选择出来的，<br>而是在陪伴过程中逐渐成为只属于你的那个人。</p>
+    <div class="boot-loading">正在唤醒…</div>
+  </div>
+
+  <section id="view-onboarding" class="view hidden">
+    <header class="ob-head">
+      <p class="ob-kicker">心屿 AI</p>
+      <h1>创造一个属于你的他</h1>
+      <p class="ob-sub">三步之后，他就开始认识你了。</p>
+      <div class="steps" id="ob-steps"></div>
+    </header>
+    <div class="ob-body" id="ob-body"></div>
+    <footer class="ob-foot">
+      <button class="btn ghost" id="ob-back">上一步</button>
+      <button class="btn primary" id="ob-next" disabled>下一步</button>
+    </footer>
+  </section>
+
+  <section id="view-chat" class="view hidden">
+    <header class="topbar">
+      <button class="icon-btn" id="chat-back" aria-label="返回">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+          <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor"
+                stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="topbar-title">
+        <span class="topbar-name" id="chat-name">他</span>
+        <span class="status-dot" aria-label="在线"></span>
+        <span class="topbar-memory hidden" id="chat-memory"></span>
+      </div>
+      <button class="icon-btn menu-btn" id="chat-menu" aria-label="菜单">
+        <span class="menu-dot"></span>
+        <span class="menu-dot"></span>
+        <span class="menu-dot"></span>
+      </button>
+    </header>
+    <div class="menu-pop hidden" id="chat-menu-pop">
+      <button class="menu-item" data-act="voice">语音模式</button>
+      <button class="menu-item" data-act="memory">查看他记得的事</button>
+      <button class="menu-item" data-act="profile">调整他的人格</button>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="composer">
+      <div class="composer-row">
+        <textarea id="composer-input" rows="1" placeholder="说点什么…"></textarea>
+        <button class="btn send" id="composer-send">发送</button>
+      </div>
+      <p class="composer-tip" id="composer-tip"></p>
+    </div>
+  </section>
+
+  <section id="view-voice" class="view voice-view hidden">
+    <div class="voice-orb" id="voice-orb"></div>
+    <div class="voice-subtitles">
+      <p class="voice-line voice-line-en" id="voice-en">Hold and speak</p>
+      <p class="voice-line voice-line-zh" id="voice-zh">按住说话</p>
+    </div>
+    <button class="voice-mic" id="voice-mic" aria-label="按住说话">
+      <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+        <rect x="9" y="3" width="6" height="12" rx="3" fill="currentColor"/>
+        <path d="M5 11a7 7 0 0 0 14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="voice-back" id="voice-back" aria-label="返回">←</button>
+  </section>
+
+  <section id="view-memory" class="view hidden">
+    <header class="page-head">
+      <h2>他记得的你</h2>
+      <p class="page-sub" id="memory-sub">还没有记忆，多跟他说说话。</p>
+    </header>
+    <div class="memory-stats" id="memory-stats"></div>
+    <div class="memory-list" id="memory-list"></div>
+    <div class="add-memory">
+      <textarea id="memory-input" rows="2" placeholder="告诉他一件想让他记住的事…"></textarea>
+      <div class="add-memory-row">
+        <select id="memory-category">
+          <option value="basic">基础信息</option>
+          <option value="preference">偏好</option>
+          <option value="emotion">心事</option>
+          <option value="relationship">我们的事</option>
+        </select>
+        <button class="btn primary" id="memory-add">让他记住</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-profile" class="view hidden">
+    <header class="page-head">
+      <h2 id="profile-name">他</h2>
+      <p class="page-sub" id="profile-sub"></p>
+    </header>
+    <div class="card">
+      <div class="card-title">你们之间</div>
+      <div class="relation-block" id="relation-block"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">他的心情雷达</div>
+      <p class="card-hint">最近几轮他察觉到的情绪</p>
+      <div class="mood-strip" id="mood-strip"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">他的人格里，你可以调的部分</div>
+      <p class="card-hint">改动会立刻影响他怎么跟你说话</p>
+      <div id="persona-sliders" class="sliders"></div>
+      <div class="card-actions">
+        <button class="btn primary" id="persona-save">保存人格</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">头像</div>
+      <div class="avatar-row">
+        <img id="profile-avatar" class="avatar-large" alt="头像">
+        <div class="avatar-meta" id="avatar-meta"></div>
+      </div>
+    </div>
+    <div class="card danger">
+      <div class="card-title">数据与边界</div>
+      <p class="card-hint">他是 AI，不是真人。你的记忆只属于你，可以随时删掉。</p>
+      <div class="card-actions">
+        <button class="btn ghost" id="logout">重新开始（本地数据保留）</button>
+      </div>
+    </div>
+  </section>
+
+  <nav class="tabbar hidden" id="tabbar">
+    <button data-view="chat" class="tab active">聊天</button>
+    <button data-view="memory" class="tab">记忆</button>
+    <button data-view="profile" class="tab">他</button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+<script src="/app.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("/sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>

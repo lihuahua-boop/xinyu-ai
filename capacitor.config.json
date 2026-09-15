@@ -1,0 +1,14 @@
+{
+  "appId": "ai.xinyu.companion",
+  "appName": "心屿 AI",
+  "webDir": "web",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  },
+  "ios": {
+    "allowMixedContent": true
+  }
+}

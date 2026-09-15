@@ -1,0 +1,59 @@
+name: Build App
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Install deps
+        run: npm ci || npm install
+      - name: Add Android platform
+        run: npx cap add android || npx cap sync android
+      - name: Build APK
+        run: |
+          cd android
+          ./gradlew assembleRelease
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: xinyu-android
+          path: android/app/build/outputs/apk/release/*.apk
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Install deps
+        run: npm ci || npm install
+      - name: Add iOS platform
+        run: npx cap add ios || npx cap sync ios
+      - name: Build IPA
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -archivePath build.xcarchive archive | xcpretty
+          xcodebuild -exportArchive -archivePath build.xcarchive -exportPath export -exportOptionsPlist /dev/stdin <<EOF | xcpretty
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>method</key><string>ad-hoc</string>
+          <key>signingStyle</key><string>automatic</string>
+          <key>teamID</key><string>$(echo "$TEAM_ID")</string>
+          <key>provisioningProfiles</key><dict><key>ai.xinyu.companion</key><string>iOS Team Provisioning Profile: *</string></dict>
+          </dict></plist>
+          EOF
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: xinyu-ios
+          path: ios/App/export/*.ipa
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
