@@ -864,6 +864,54 @@ function bind() {
   });
   document.addEventListener("click", function () { toggleMenu(false); });
   $("voice-back").addEventListener("click", function () { stopVoiceDemo(); showView("chat"); });
+  // 声音设置面板
+  var SETTINGS_VOICES = [
+    { key: "xiaoxiao",   zh: "晓晓",   tag: "温柔" },
+    { key: "xiaoyi",     zh: "晓伊",   tag: "甜美" },
+    { key: "xiaochen",   zh: "晓辰",   tag: "知性" },
+    { key: "xiaomo",     zh: "晓墨",   tag: "文艺" },
+    { key: "xiaoshuang", zh: "晓双",   tag: "活泼" },
+    { key: "yunxi",      zh: "云希",   tag: "清朗男声" },
+    { key: "yunyang",    zh: "云扬",   tag: "阳光男声" },
+  ];
+  function renderVoiceList() {
+    var list = $("voice-list"); if (!list) return;
+    list.innerHTML = "";
+    SETTINGS_VOICES.forEach(function (v) {
+      var btn = document.createElement("div");
+      btn.className = "voice-item" + (v.key === TTS_VOICE ? " selected" : "");
+      btn.innerHTML = v.zh + '<div class="voice-en">' + v.tag + '</div>';
+      btn.onclick = function () {
+        TTS_VOICE = v.key; localStorage.setItem("tts_voice", v.key);
+        renderVoiceList();
+        // 试听
+        var audio = new Audio("/api/tts?text=" + encodeURIComponent("你好呀，我是" + v.zh) + "&voice=" + v.key + "&speed=" + TTS_SPEED);
+        audio.play().catch(function () {});
+      };
+      list.appendChild(btn);
+    });
+  }
+  $("voice-settings").addEventListener("click", function () {
+    renderVoiceList();
+    $("voice-panel").classList.remove("hidden");
+    $("voice-panel-mask").classList.remove("hidden");
+  });
+  function closeVoicePanel() {
+    $("voice-panel").classList.add("hidden");
+    $("voice-panel-mask").classList.add("hidden");
+  }
+  $("voice-panel-mask").addEventListener("click", closeVoicePanel);
+  var speedSlider = $("voice-speed");
+  if (speedSlider) {
+    speedSlider.value = TTS_SPEED;
+    speedSlider.oninput = function () {
+      TTS_SPEED = parseFloat(this.value);
+      localStorage.setItem("tts_speed", TTS_SPEED);
+      $("voice-speed-val").textContent = TTS_SPEED.toFixed(1) + "x";
+    };
+    $("voice-speed-val").textContent = TTS_SPEED.toFixed(1) + "x";
+  }
+
   var mic = $("voice-mic");
   if (mic) {
     mic.addEventListener("mousedown", startRecognition);
